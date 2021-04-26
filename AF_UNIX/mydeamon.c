@@ -53,7 +53,7 @@ void unix_domain_deamon(char *unix_domain_pathname){
 	struct sockaddr_un client_add;
 
     socklen_t s_len;
-    int sfd, cfd, sa, recv_length=1;
+    int sfd, cfd, pid, recv_length=1;
 
     memset(&server_add, 0, sizeof(struct sockaddr_un));
     server_add.sun_family = AF_UNIX;           
@@ -65,7 +65,7 @@ void unix_domain_deamon(char *unix_domain_pathname){
         perror("socket");
 		return;
     }
-    printf("Server socket fd = %d\n", sfd);
+    printf("[*] Server socket us created (fd = %d)\n", sfd);
 
     // Delete any file that already exists at the address. Make sure the deletion
     // succeeds. If the error is just that the file/directory doesn't exist, it's fine.
@@ -77,6 +77,7 @@ void unix_domain_deamon(char *unix_domain_pathname){
         perror("bind");
         return;
     }
+    printf("[*] Binded to %s local socket\n", unix_domain_pathname);
 
     /**
      * 5 oznacuje arg pre max velkost stacku (backlog queue)
@@ -85,24 +86,33 @@ void unix_domain_deamon(char *unix_domain_pathname){
 		perror("listen");
 		return;
     }
-
-    sa=sizeof(struct sockaddr_un);
+    printf("[*] Listening...\n");
     
 	while(1){
-        printf("waiting for connection...\n");
-
-		cfd = accept(sfd,(struct sockaddr *)&client_add,&sa);
+		cfd = accept(sfd,(struct sockaddr *)&client_add,&s_len);
 
 		if(cfd<0){
 			perror("accept");
 			return;
 		}
-		else
-			printf("Accepted socket fd = %d\n", cfd);
-
-	    connection_established(cfd);        
-
-        close(cfd);  
+        printf("Connectin accepted from %s\n", client_add.sun_path);
+		
+        if ((pid = fork()) == 0){
+            close(sfd);
+            connection_established(cfd);              
+        }  else if (pid < 0){
+            printf("fork Failed\n");
+            exit(1);
+        }
+        //else if (pid > 0){
+        //    printf("Hello from the main proces, with PID: %d.\n", pid);
+        //    close(cfd);
+        //    printf("Zvysujem counter..\n");
+        //} else {
+        //    printf("Accepted socket fd = %d, with PID: %d\n", cfd, pid);
+        //    connection_established(cfd);  
+          //  close(cfd);
+        //}        
 	}
 }
 
