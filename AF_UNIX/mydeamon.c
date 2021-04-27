@@ -1,17 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <linux/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
-#include <errno.h>
 #include "socket_basics.h"
-
-
-#define DEFAULT_SOCKET_PATHNAME       "socket"
-#define BACKLOG                       5
-#define COMMAND_LIMIT_SIZE            1024
+#include "utilities.c"
 
 
 void connection_established(int cfd){
@@ -100,31 +88,13 @@ void unix_domain_deamon(char *unix_domain_pathname){
         if ((pid = fork()) == 0){
             close(sfd);
             connection_established(cfd);              
-        }  else if (pid < 0){
+        } else if (pid > 0){
+            close(cfd);
+        } else{
             printf("fork Failed\n");
             exit(1);
-        }
-        //else if (pid > 0){
-        //    printf("Hello from the main proces, with PID: %d.\n", pid);
-        //    close(cfd);
-        //    printf("Zvysujem counter..\n");
-        //} else {
-        //    printf("Accepted socket fd = %d, with PID: %d\n", cfd, pid);
-        //    connection_established(cfd);  
-          //  close(cfd);
-        //}        
+        }     
 	}
-}
-
-
-void unix_domain_validate_socket_pathname(int argc, char const *argv[], char *unix_domain_pathname){
-
-    if (argc <= 1 || (strlen(argv[1]) >= 255)){
-        strcpy(unix_domain_pathname, DEFAULT_SOCKET_PATHNAME);
-        return;
-    } 
-
-    strcpy(unix_domain_pathname, argv[1]);
 }
 
 

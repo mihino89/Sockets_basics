@@ -1,18 +1,31 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <linux/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
 #include "socket_basics.h"
+#include "utilities.c"
 
-#define DEFAULT_SOCKET_PATHNAME       "socket"
-#define COMMAND_LIMIT_SIZE            1024
+
+void get_shell_text(char *shell_text){
+    char shell_text_1[5], shell_text_2[5];
+
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+
+    sprintf(shell_text_1, "%02d:", tm.tm_hour);
+    sprintf(shell_text_2, "%02d  ", tm.tm_min);
+
+    strcat(shell_text, shell_text_1);
+    strcat(shell_text, shell_text_2);
+
+    char *user=getenv("USER");
+    if(user == NULL)
+        exit(EXIT_FAILURE);
+    
+    strcat(shell_text, user);
+    strcat(shell_text, "@student#");
+}
 
 
 void connection_established(int sfd){
 
+    char *shell_text = (char *)malloc(GENERAL_SIZE_LIMIT  * sizeof(char));
     char buffer[COMMAND_LIMIT_SIZE];
     int n = 0;
 
@@ -22,7 +35,9 @@ void connection_established(int sfd){
 
     while (1){
         bzero(buffer, COMMAND_LIMIT_SIZE);
-        printf("client@groundzero: ");
+
+        get_shell_text(shell_text);
+        printf("%s", shell_text);
         
         n = 0;
         while ((buffer[n++] = getchar()) != '\n')
@@ -36,6 +51,7 @@ void connection_established(int sfd){
             break;
         }
 
+        bzero(shell_text, GENERAL_SIZE_LIMIT);
         bzero(buffer, COMMAND_LIMIT_SIZE);
         read(sfd, buffer, sizeof(buffer));
         printf("%s\n", buffer);
@@ -71,17 +87,6 @@ void unix_domain_client(char *unix_domain_pathname){
     }
 
     connection_established(cfd);
-}
-
-
-void unix_domain_validate_socket_pathname(int argc, char const *argv[], char *unix_domain_pathname){
-
-    if (argc <= 1 || (strlen(argv[1]) >= 255)){
-        strcpy(unix_domain_pathname, DEFAULT_SOCKET_PATHNAME);
-        return;
-    } 
-
-    strcpy(unix_domain_pathname, argv[1]);
 }
 
 
