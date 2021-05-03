@@ -46,7 +46,7 @@ void connection_established(int sfd){
         write(sfd, buffer, sizeof(buffer));
 
         // if msg contains "Exit" then server exit and chat ended.
-        if (strncmp("exit", buffer, 4) == 0) {
+        if (strncmp("quit", buffer, 4) == 0) {
             printf("Server Exit...\n");
             break;
         }
